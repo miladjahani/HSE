@@ -8,7 +8,7 @@ export default function Backup() {
 
   const loadBackups = () => {
     axios.get('/api/backup/list')
-      .then(res => setBackups(res.data))
+      .then(res => setBackups(Array.isArray(res.data) ? res.data : []))
       .catch(console.error);
   };
 

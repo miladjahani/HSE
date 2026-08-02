@@ -26,7 +26,7 @@ export default function Reports() {
   const [selectedPersonnel, setSelectedPersonnel] = useState([]);
 
   useEffect(() => {
-    axios.get('/api/personnel').then(res => setPersonnelList(res.data)).catch(console.error);
+    axios.get('/api/personnel').then(res => setPersonnelList(Array.isArray(res.data) ? res.data : [])).catch(console.error);
   }, []);
 
   const handleTableToggle = (id) => {
