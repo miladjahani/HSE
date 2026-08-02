@@ -101,17 +101,18 @@ class Sidebar(QWidget):
             btn.setChecked(k == key)
 
 
+
     def _on_click(self, key):
         self.set_active(key)
         self.navigate.emit(key)
 
-def _toggle_theme(self):
+    def _toggle_theme(self):
         workspace = db.get_workspace()
 
         # Default to dark if no workspace yet
         current_theme = "dark"
         if workspace:
-            current_theme = workspace.get("theme") or "dark"
+            current_theme = workspace["theme"] if "theme" in workspace.keys() else "dark"
 
         new_theme = "light" if current_theme == "dark" else "dark"
 

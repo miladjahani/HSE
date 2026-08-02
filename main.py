@@ -50,7 +50,7 @@ def main():
 
     # Check theme in database
     workspace = db.get_workspace()
-    if workspace and workspace.get("theme") == "light":
+    if workspace and ("theme" in workspace.keys()) and workspace["theme"] == "light":
         set_theme("light")
     else:
         set_theme("dark")
