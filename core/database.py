@@ -46,6 +46,7 @@ class Database:
                 logo_path TEXT,
                 license_no TEXT,
                 setup_completed INTEGER NOT NULL DEFAULT 0,
+                theme TEXT DEFAULT 'dark',
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
@@ -76,6 +77,12 @@ class Database:
             # Add ppe_size column if not exists
             try:
                 c.execute("ALTER TABLE personnel ADD COLUMN ppe_size TEXT;")
+            except sqlite3.OperationalError:
+                pass
+
+            # Add theme column if not exists
+            try:
+                c.execute("ALTER TABLE workspace_settings ADD COLUMN theme TEXT DEFAULT 'dark';")
             except sqlite3.OperationalError:
                 pass
 
@@ -229,6 +236,10 @@ class Database:
                     setup_completed=1,
                     updated_at=excluded.updated_at;
             """, (company_name, mine_name, logo_path, license_no, ts, ts))
+
+    def update_theme(self, theme: str):
+        with self.connect() as conn:
+            conn.execute("UPDATE workspace_settings SET theme = ? WHERE id = 1", (theme,))
 
     def get_workspace(self):
         with self.connect() as conn:

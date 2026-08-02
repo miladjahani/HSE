@@ -2,10 +2,13 @@
 ui/widgets/sidebar.py
 منوی کناری ثابت با دکمه‌های بزرگ و آیکون‌دار، مناسب استفاده با دستکش.
 """
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel
+
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox
 from PySide6.QtCore import Signal, Qt
+from core.database import db
 
 from core.config import COLORS, APP_NAME
+
 
 MENU_ITEMS = [
     ("dashboard", "🏠", "داشبورد"),
@@ -59,7 +62,16 @@ class Sidebar(QWidget):
             layout.addWidget(btn)
             self._buttons[key] = btn
 
+
         layout.addStretch(1)
+
+        self.theme_btn = QPushButton("  🌓   تغییر تم")
+        self.theme_btn.setCursor(Qt.PointingHandCursor)
+        self.theme_btn.setFixedHeight(48)
+        self.theme_btn.setStyleSheet(self._btn_style())
+        self.theme_btn.clicked.connect(self._toggle_theme)
+        layout.addWidget(self.theme_btn)
+
 
     def _btn_style(self):
         return f"""
@@ -88,6 +100,18 @@ class Sidebar(QWidget):
         for k, btn in self._buttons.items():
             btn.setChecked(k == key)
 
+
     def _on_click(self, key):
         self.set_active(key)
         self.navigate.emit(key)
+
+    def _toggle_theme(self):
+        workspace = db.get_workspace()
+        if not workspace:
+            return
+
+        current_theme = workspace.get("theme", "dark")
+        new_theme = "light" if current_theme == "dark" else "dark"
+
+        db.update_theme(new_theme)
+        QMessageBox.information(self, "تغییر تم", "تم برنامه تغییر کرد. برای اعمال کامل تغییرات، برنامه را مجددا راه‌اندازی کنید.")
