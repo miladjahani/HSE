@@ -65,12 +65,19 @@ class Database:
                 contract_status TEXT,     -- فعال/پایان‌یافته/تعلیق
                 hire_date_shamsi TEXT,
                 phone TEXT,
+                ppe_size TEXT,
                 photo_path TEXT,
                 is_active INTEGER NOT NULL DEFAULT 1,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
             """)
+
+            # Add ppe_size column if not exists
+            try:
+                c.execute("ALTER TABLE personnel ADD COLUMN ppe_size TEXT;")
+            except sqlite3.OperationalError:
+                pass
 
             # حوادث و شبه‌حوادث
             c.execute("""

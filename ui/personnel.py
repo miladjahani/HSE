@@ -17,6 +17,7 @@ FIELDS = [
      "options": ["فعال", "تعلیق", "پایان‌یافته"]},
     {"key": "hire_date_shamsi", "label": "تاریخ استخدام", "type": "date"},
     {"key": "phone", "label": "شماره تماس", "type": "text"},
+    {"key": "ppe_size", "label": "سایز لوازم حفاظت فردی", "type": "text"},
     {"key": "photo_path", "label": "تصویر پرسنلی", "type": "file"},
 ]
 
