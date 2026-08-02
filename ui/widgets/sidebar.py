@@ -105,13 +105,17 @@ class Sidebar(QWidget):
         self.set_active(key)
         self.navigate.emit(key)
 
-    def _toggle_theme(self):
+def _toggle_theme(self):
         workspace = db.get_workspace()
-        if not workspace:
-            return
 
-        current_theme = workspace.get("theme", "dark")
+        # Default to dark if no workspace yet
+        current_theme = "dark"
+        if workspace:
+            current_theme = workspace.get("theme") or "dark"
+
         new_theme = "light" if current_theme == "dark" else "dark"
 
-        db.update_theme(new_theme)
-        QMessageBox.information(self, "تغییر تم", "تم برنامه تغییر کرد. برای اعمال کامل تغییرات، برنامه را مجددا راه‌اندازی کنید.")
+        if workspace:
+            db.update_theme(new_theme)
+
+        QMessageBox.information(self, "تغییر تم", "تم برنامه به {} تغییر کرد. برای اعمال کامل تغییرات، برنامه را ببندید و دوباره باز کنید.".format("روشن" if new_theme=="light" else "تاریک"))
