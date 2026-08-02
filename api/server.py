@@ -79,6 +79,50 @@ for table in TABLES:
 
 
 # Dashboard Endpoint
+
+@app.get("/api/personnel/{personnel_id}/profile")
+def get_personnel_profile(personnel_id: int):
+    # Fetch all data related to a single personnel
+    personnel = db.fetch_one("SELECT * FROM personnel WHERE id = ?", (personnel_id,))
+    if not personnel:
+        raise HTTPException(status_code=404, detail="Personnel not found")
+
+    data = row_to_dict(personnel)
+
+    # Incidents
+    data["incidents"] = rows_to_list(db.fetch_all("SELECT * FROM incidents WHERE personnel_id = ? ORDER BY incident_date_shamsi DESC", (personnel_id,)))
+
+    # Medical Exams
+    data["medical_exams"] = rows_to_list(db.fetch_all("SELECT * FROM medical_exams WHERE personnel_id = ? ORDER BY exam_date_shamsi DESC", (personnel_id,)))
+
+    # Training Records
+    data["training_records"] = rows_to_list(db.fetch_all('''
+        SELECT tr.*, tc.course_title
+        FROM training_records tr
+        JOIN training_courses tc ON tr.course_id = tc.id
+        WHERE tr.personnel_id = ?
+        ORDER BY tr.completion_date_shamsi DESC
+    ''', (personnel_id,)))
+
+    # PPE Issuance
+    data["ppe_issuance"] = rows_to_list(db.fetch_all('''
+        SELECT pi.*, p.item_name
+        FROM ppe_issuance pi
+        JOIN ppe_items p ON pi.ppe_item_id = p.id
+        WHERE pi.personnel_id = ?
+        ORDER BY pi.issue_date_shamsi DESC
+    ''', (personnel_id,)))
+
+    # Disciplinary Records
+    data["disciplinary_records"] = rows_to_list(db.fetch_all("SELECT * FROM disciplinary_records WHERE personnel_id = ? ORDER BY event_date_shamsi DESC", (personnel_id,)))
+
+    return data
+
+@app.get("/api/reports/export")
+def generate_reports(table: str, start_date: str = None, end_date: str = None, personnel_id: int = None):
+    # Generate CSV logic using pandas or sqlite directly
+    pass
+
 @app.get("/api/dashboard")
 def get_dashboard_data():
     data = {}

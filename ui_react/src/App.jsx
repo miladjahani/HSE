@@ -10,6 +10,7 @@ import Training from './pages/Training';
 import PpeStock from './pages/PpeStock';
 import PpeIssuance from './pages/PpeIssuance';
 import Disciplinary from './pages/Disciplinary';
+import PersonnelProfile from './pages/PersonnelProfile';
 import axios from 'axios';
 
 axios.defaults.baseURL = 'http://127.0.0.1:8000';
@@ -50,7 +51,7 @@ function App() {
           <Route path="/ppe-issuance" element={<PpeIssuance />} />
           <Route path="/disciplinary" element={<Disciplinary />} />
           {/* Placeholder for missing routes */}
-          <Route path="/profile" element={<div className="p-8 text-center text-gray-500 font-bold text-xl bg-white rounded shadow">در حال توسعه ...</div>} />
+          <Route path="/profile" element={<PersonnelProfile />} />
           <Route path="/reports" element={<div className="p-8 text-center text-gray-500 font-bold text-xl bg-white rounded shadow">در حال توسعه ...</div>} />
           <Route path="/backup" element={<div className="p-8 text-center text-gray-500 font-bold text-xl bg-white rounded shadow">در حال توسعه ...</div>} />
           <Route path="*" element={<Navigate to="/" replace />} />
