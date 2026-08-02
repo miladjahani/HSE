@@ -9,6 +9,7 @@ from core.config import COLORS, APP_NAME
 from ui.widgets.sidebar import Sidebar
 from ui.dashboard import DashboardPage
 from ui.personnel import PersonnelPage
+from ui.personnel_profile import PersonnelProfilePage
 from ui.incidents import IncidentsPage
 from ui.ppe import PpeStockPage, PpeIssuancePage
 from ui.training import TrainingPage
@@ -43,6 +44,7 @@ class MainWindow(QMainWindow):
         self.pages = {}
         self._register_page("dashboard", DashboardPage())
         self._register_page("personnel", PersonnelPage())
+        self._register_page("personnel_profile", PersonnelProfilePage())
         self._register_page("incidents", IncidentsPage())
         self._register_page("ppe_stock", PpeStockPage())
         self._register_page("ppe_issuance", PpeIssuancePage())

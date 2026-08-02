@@ -10,6 +10,7 @@ from core.config import COLORS, APP_NAME
 MENU_ITEMS = [
     ("dashboard", "🏠", "داشبورد"),
     ("personnel", "👷", "پرسنل"),
+    ("personnel_profile", "🗂", "پرونده جامع پرسنل"),
     ("incidents", "⚠️", "حوادث و شبه‌حوادث"),
     ("ppe_stock", "🦺", "انبار PPE"),
     ("ppe_issuance", "📦", "تحویل PPE"),
