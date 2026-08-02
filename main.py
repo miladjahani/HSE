@@ -59,10 +59,13 @@ def main():
     app.setFont(QFont(FONT_FAMILY, FONT_SIZE_BASE))
 
 
+
     if not db.is_setup_completed():
         wizard = SetupWizard()
-        if wizard.exec() != wizard.Accepted:
+        from PySide6.QtWidgets import QDialog
+        if wizard.exec() != QDialog.DialogCode.Accepted:
             sys.exit(0)
+
 
     window = MainWindow()
     window.showMaximized()
