@@ -61,7 +61,7 @@ export default function CrudPage({ title, endpoint, fields, listColumns }) {
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -100,7 +100,7 @@ export default function CrudPage({ title, endpoint, fields, listColumns }) {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-3xl shadow-float border border-gray-100 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
               <h3 className="text-lg font-bold text-gray-800">{editingId ? 'ویرایش رکورد' : 'ثبت رکورد جدید'}</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-gray-700"><X size={24} /></button>

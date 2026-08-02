@@ -5,8 +5,14 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+
     extend: {
+      boxShadow: {
+        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+        'float': '0 10px 40px -10px rgba(0,0,0,0.08)',
+      },
       colors: {
+
         'brand': '#F5A623',
         'brand-dark': '#E09612',
         'sidebar': '#1B2129',

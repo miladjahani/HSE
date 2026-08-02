@@ -10,7 +10,14 @@ import Training from './pages/Training';
 import PpeStock from './pages/PpeStock';
 import PpeIssuance from './pages/PpeIssuance';
 import Disciplinary from './pages/Disciplinary';
+import PersonnelProfile from './pages/PersonnelProfile';
+import ManHours from './pages/ManHours';
+import WorkPermits from './pages/WorkPermits';
+import Environmental from './pages/Environmental';
+import Backup from './pages/Backup';
+import Reports from './pages/Reports';
 import axios from 'axios';
+
 
 axios.defaults.baseURL = 'http://127.0.0.1:8000';
 
@@ -49,10 +56,12 @@ function App() {
           <Route path="/ppe-stock" element={<PpeStock />} />
           <Route path="/ppe-issuance" element={<PpeIssuance />} />
           <Route path="/disciplinary" element={<Disciplinary />} />
-          {/* Placeholder for missing routes */}
-          <Route path="/profile" element={<div className="p-8 text-center text-gray-500 font-bold text-xl bg-white rounded shadow">در حال توسعه ...</div>} />
-          <Route path="/reports" element={<div className="p-8 text-center text-gray-500 font-bold text-xl bg-white rounded shadow">در حال توسعه ...</div>} />
-          <Route path="/backup" element={<div className="p-8 text-center text-gray-500 font-bold text-xl bg-white rounded shadow">در حال توسعه ...</div>} />
+          <Route path="/man-hours" element={<ManHours />} />
+          <Route path="/work-permits" element={<WorkPermits />} />
+          <Route path="/environmental" element={<Environmental />} />
+          <Route path="/profile" element={<PersonnelProfile />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/backup" element={<Backup />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

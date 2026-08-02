@@ -79,6 +79,110 @@ for table in TABLES:
 
 
 # Dashboard Endpoint
+
+@app.get("/api/personnel/{personnel_id}/profile")
+def get_personnel_profile(personnel_id: int):
+    # Fetch all data related to a single personnel
+    personnel = db.fetch_one("SELECT * FROM personnel WHERE id = ?", (personnel_id,))
+    if not personnel:
+        raise HTTPException(status_code=404, detail="Personnel not found")
+
+    data = row_to_dict(personnel)
+
+    # Incidents
+    data["incidents"] = rows_to_list(db.fetch_all("SELECT * FROM incidents WHERE personnel_id = ? ORDER BY incident_date_shamsi DESC", (personnel_id,)))
+
+    # Medical Exams
+    data["medical_exams"] = rows_to_list(db.fetch_all("SELECT * FROM medical_exams WHERE personnel_id = ? ORDER BY exam_date_shamsi DESC", (personnel_id,)))
+
+    # Training Records
+    data["training_records"] = rows_to_list(db.fetch_all('''
+        SELECT tr.*, tc.course_title
+        FROM training_records tr
+        JOIN training_courses tc ON tr.course_id = tc.id
+        WHERE tr.personnel_id = ?
+        ORDER BY tr.completion_date_shamsi DESC
+    ''', (personnel_id,)))
+
+    # PPE Issuance
+    data["ppe_issuance"] = rows_to_list(db.fetch_all('''
+        SELECT pi.*, p.item_name
+        FROM ppe_issuance pi
+        JOIN ppe_items p ON pi.ppe_item_id = p.id
+        WHERE pi.personnel_id = ?
+        ORDER BY pi.issue_date_shamsi DESC
+    ''', (personnel_id,)))
+
+    # Disciplinary Records
+    data["disciplinary_records"] = rows_to_list(db.fetch_all("SELECT * FROM disciplinary_records WHERE personnel_id = ? ORDER BY event_date_shamsi DESC", (personnel_id,)))
+
+    return data
+
+@app.get("/api/reports/export")
+def generate_reports(tables: str, start_date: str = None, end_date: str = None, personnel_ids: str = None):
+    try:
+        import pandas as pd
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Pandas library not installed. Please pip install pandas openpyxl")
+
+    table_list = tables.split(",")
+    p_ids = personnel_ids.split(",") if personnel_ids else []
+
+    TABLE_META = {
+        "personnel": {"date_col": "hire_date_shamsi", "personnel_col": "id"},
+        "incidents": {"date_col": "incident_date_shamsi", "personnel_col": "personnel_id"},
+        "ppe_items": {"date_col": "created_at", "personnel_col": None},
+        "ppe_issuance": {"date_col": "issue_date_shamsi", "personnel_col": "personnel_id"},
+        "training_courses": {"date_col": "created_at", "personnel_col": None},
+        "training_records": {"date_col": "completion_date_shamsi", "personnel_col": "personnel_id"},
+        "medical_exams": {"date_col": "exam_date_shamsi", "personnel_col": "personnel_id"},
+        "disciplinary_records": {"date_col": "event_date_shamsi", "personnel_col": "personnel_id"},
+        "man_hours": {"date_col": "month_shamsi", "personnel_col": None},
+        "work_permits": {"date_col": "month_shamsi", "personnel_col": None},
+        "environmental_metrics": {"date_col": "month_shamsi", "personnel_col": None},
+    }
+
+    from core.config import EXPORT_DIR
+    import os
+    from datetime import datetime
+
+    filename = f"HSE_Export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filepath = os.path.join(EXPORT_DIR, filename)
+
+    with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
+        for t in table_list:
+            query = f"SELECT * FROM {t}"
+            params = []
+            conditions = []
+            meta = TABLE_META.get(t)
+
+            if meta:
+                if start_date:
+                    conditions.append(f"{meta['date_col']} >= ?")
+                    params.append(start_date)
+                if end_date:
+                    conditions.append(f"{meta['date_col']} <= ?")
+                    params.append(end_date)
+                if meta['personnel_col'] and p_ids:
+                    placeholders = ",".join(["?"] * len(p_ids))
+                    conditions.append(f"{meta['personnel_col']} IN ({placeholders})")
+                    params.extend(p_ids)
+
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+
+            rows = db.fetch_all(query, params)
+            if not rows:
+                df = pd.DataFrame([{"Message": "بدون داده"}])
+            else:
+                df = pd.DataFrame([dict(r) for r in rows])
+
+            sheet_name = t[:31] # Excel sheet name limit
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+    return FileResponse(path=filepath, filename=filename, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
 @app.get("/api/dashboard")
 def get_dashboard_data():
     data = {}
@@ -94,25 +198,45 @@ def get_dashboard_data():
         data["total_employees"] = active["c"] if active else 0
         data["man_hours"] = 0
 
+    # --- Old KPIs ---
+    open_incidents = db.fetch_one("SELECT COUNT(*) c FROM incidents WHERE action_status != 'بسته'")["c"]
+    data["open_incidents"] = open_incidents or 0
+
+    active_personnel = data["total_employees"]
+    issued_personnel_ids = {r["personnel_id"] for r in db.fetch_all("SELECT DISTINCT personnel_id FROM ppe_issuance")}
+    data["missing_ppe"] = max(active_personnel - len(issued_personnel_ids), 0)
+
+    medical_due_soon = 0
+    from core.date_utils import days_between
+    for r in db.fetch_all("SELECT next_due_date_shamsi FROM medical_exams WHERE next_due_date_shamsi IS NOT NULL"):
+        try:
+            if 0 <= days_between(r["next_due_date_shamsi"]) <= 30:
+                medical_due_soon += 1
+        except:
+            pass
+    data["medical_due_soon"] = medical_due_soon
+
+    rewards = db.fetch_one("SELECT COUNT(*) c FROM disciplinary_records WHERE record_type = 'تشویق'")["c"]
+    penalties = db.fetch_one("SELECT COUNT(*) c FROM disciplinary_records WHERE record_type = 'تنبیه'")["c"]
+    data["rewards"] = rewards or 0
+    data["penalties"] = penalties or 0
+    # ----------------
+
     # 2. Lost Time (Total days from incidents)
     lost_time = db.fetch_one("SELECT SUM(lost_time_days) as total FROM incidents")
     data["lost_time_days"] = lost_time["total"] if lost_time and lost_time["total"] else 0
 
     # 3. Heinrich Pyramid
     pyramid = {
-        "anomaly_report": 0, # Could map to 'نزدیک به حادثه' or a new type
+        "anomaly_report": db.fetch_one("SELECT COUNT(*) as c FROM incidents WHERE incident_type='نزدیک به حادثه'")["c"] or 0,
         "near_miss": db.fetch_one("SELECT COUNT(*) as c FROM incidents WHERE incident_type='شبه‌حادثه'")["c"] or 0,
         "first_aid": db.fetch_one("SELECT COUNT(*) as c FROM incidents WHERE severity='جزئی'")["c"] or 0,
         "lost_time_accident": db.fetch_one("SELECT COUNT(*) as c FROM incidents WHERE lost_time_days > 0")["c"] or 0,
         "death": db.fetch_one("SELECT COUNT(*) as c FROM incidents WHERE severity='فوت'")["c"] or 0,
     }
-    # If anomaly report isn't directly mapped, just give it a mock ratio for now
-    pyramid["anomaly_report"] = pyramid["near_miss"] * 3
     data["heinrich_pyramid"] = pyramid
 
     # 4. Safety Index (Rates)
-    # Frequency Rate = (Number of lost time accidents * 1,000,000) / Total Man-hours
-    # Severity Rate = (Total lost time days * 1,000,000) / Total Man-hours
     total_mh_all_time = db.fetch_one("SELECT SUM(man_hours) as total FROM man_hours")["total"] or 0
     if total_mh_all_time > 0:
         data["frequency_rate"] = round((pyramid["lost_time_accident"] * 1000000) / total_mh_all_time, 2)
@@ -125,7 +249,7 @@ def get_dashboard_data():
     permits = db.fetch_one("SELECT SUM(permit_count) as total FROM work_permits")
     data["work_permits"] = permits["total"] if permits and permits["total"] else 0
 
-    # 6. Training Man-hours (Mocked for now as we don't store duration per course, assuming 8h per course)
+    # 6. Training Man-hours
     training_count = db.fetch_one("SELECT COUNT(*) as c FROM training_records")["c"] or 0
     data["training_man_hours"] = training_count * 8
 
@@ -150,14 +274,16 @@ def get_dashboard_data():
     }
 
     # 10. Occupational Health Indicators
-    # Mapping results from medical_exams to these categories roughly
     data["occupational_health"] = {
-        "rate": "1.39%",
         "disease": db.fetch_one("SELECT COUNT(*) as c FROM medical_exams WHERE result LIKE '%بیماری%'")["c"] or 0,
         "hearing_loss": db.fetch_one("SELECT COUNT(*) as c FROM medical_exams WHERE exam_type='ادیومتری' AND result LIKE '%افت%'")["c"] or 0,
         "respiratory": db.fetch_one("SELECT COUNT(*) as c FROM medical_exams WHERE exam_type='اسپیرومتری' AND result LIKE '%مشکل%'")["c"] or 0,
         "back_pain": db.fetch_one("SELECT COUNT(*) as c FROM medical_exams WHERE result LIKE '%کمر%'")["c"] or 0,
     }
+    # Calculate rate based on total exams
+    total_exams = db.fetch_one("SELECT COUNT(*) as c FROM medical_exams")["c"] or 1
+    total_sick = data["occupational_health"]["disease"] + data["occupational_health"]["hearing_loss"] + data["occupational_health"]["respiratory"] + data["occupational_health"]["back_pain"]
+    data["occupational_health"]["rate"] = str(round((total_sick / total_exams) * 100, 2)) + "%"
 
     # 11. Environmental Indicators
     env = db.fetch_one("SELECT SUM(water_consumption_m3) as w_c, SUM(water_recovery_m3) as w_r, SUM(energy_consumption_kwh) as e_c, SUM(gas_consumption_m2) as g_c FROM environmental_metrics")
