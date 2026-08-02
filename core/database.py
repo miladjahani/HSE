@@ -86,6 +86,18 @@ class Database:
             except sqlite3.OperationalError:
                 pass
 
+            # Add lost_time_days and risk_assessment_level columns to incidents
+            try:
+                c.execute("ALTER TABLE incidents ADD COLUMN lost_time_days INTEGER DEFAULT 0;")
+            except sqlite3.OperationalError:
+                pass
+
+            try:
+                c.execute("ALTER TABLE incidents ADD COLUMN risk_assessment_level TEXT;")
+            except sqlite3.OperationalError:
+                pass
+
+
             # حوادث و شبه‌حوادث
             c.execute("""
             CREATE TABLE IF NOT EXISTS incidents (
@@ -201,6 +213,43 @@ class Database:
             );
             """)
 
+
+            # ساعات کارکرد
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS man_hours (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                month_shamsi TEXT NOT NULL UNIQUE, -- YYYY/MM
+                total_employees INTEGER NOT NULL DEFAULT 0,
+                man_hours INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            ''')
+
+            # مجوزهای کار
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS work_permits (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                month_shamsi TEXT NOT NULL UNIQUE, -- YYYY/MM
+                permit_count INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            ''')
+
+            # شاخص های زیست محیطی
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS environmental_metrics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                month_shamsi TEXT NOT NULL UNIQUE, -- YYYY/MM
+                water_consumption_m3 INTEGER NOT NULL DEFAULT 0,
+                water_recovery_m3 INTEGER NOT NULL DEFAULT 0,
+                energy_consumption_kwh INTEGER NOT NULL DEFAULT 0,
+                gas_consumption_m2 INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            ''')
             for idx_sql in [
                 "CREATE INDEX IF NOT EXISTS idx_personnel_code ON personnel(personnel_code);",
                 "CREATE INDEX IF NOT EXISTS idx_incidents_date ON incidents(incident_date_shamsi);",
