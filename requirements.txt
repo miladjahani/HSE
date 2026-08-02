@@ -1,0 +1,4 @@
+PySide6==6.7.2
+jdatetime==5.0.0
+openpyxl==3.1.5
+pyinstaller==6.10.0
