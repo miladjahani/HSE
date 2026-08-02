@@ -302,6 +302,47 @@ def get_dashboard_data():
 
     return data
 
+
+import os
+from core.config import BACKUP_DIR
+
+@app.get("/api/backup/list")
+def list_backups():
+    backups = []
+    if os.path.exists(BACKUP_DIR):
+        for f in os.listdir(BACKUP_DIR):
+            if f.endswith(".db"):
+                fpath = os.path.join(BACKUP_DIR, f)
+                backups.append({
+                    "name": f,
+                    "path": fpath,
+                    "size": os.path.getsize(fpath)
+                })
+    # Sort by name descending (latest first)
+    backups.sort(key=lambda x: x["name"], reverse=True)
+    return backups
+
+@app.post("/api/backup")
+def create_backup():
+    try:
+        path = db.backup_database()
+        return {"message": "پشتیبان‌گیری با موفقیت انجام شد.", "path": path}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/restore")
+async def restore_backup(request: Request):
+    data = await request.json()
+    path = data.get("path")
+    if not path or not os.path.exists(path):
+        raise HTTPException(status_code=400, detail="فایل پیدا نشد.")
+    try:
+        db.restore_database(path)
+        return {"message": "بازیابی دیتابیس با موفقیت انجام شد. برنامه را مجدد اجرا کنید."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/workspace")
 def get_workspace():
     return row_to_dict(db.get_workspace())
