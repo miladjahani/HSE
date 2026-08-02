@@ -19,9 +19,11 @@ def get_base_dir() -> str:
 
 
 BASE_DIR = get_base_dir()
-DATA_DIR = os.path.join(BASE_DIR, "data")
-BACKUP_DIR = os.path.join(BASE_DIR, "backups")
-EXPORT_DIR = os.path.join(BASE_DIR, "exports")
+# Data directories should be in a user-writable location (e.g. APPDATA or Home dir)
+USER_DATA_DIR = os.path.join(os.path.expanduser("~"), ".hse_manager")
+DATA_DIR = os.path.join(USER_DATA_DIR, "data")
+BACKUP_DIR = os.path.join(USER_DATA_DIR, "backups")
+EXPORT_DIR = os.path.join(USER_DATA_DIR, "exports")
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 LOGO_PATH = os.path.join(ASSETS_DIR, "logo.png")
 DB_PATH = os.path.join(DATA_DIR, "hse_mine.db")

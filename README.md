@@ -27,14 +27,18 @@ venv\Scripts\activate
 pip install -r requirements-fastapi.txt
 python main.py
 
-## ساخت فایل نصب/اجرایی (EXE) در ویندوز
+## ساخت فایل نصبی (Setup Installer) در ویندوز
 
-مرحله ۱: ابتدا مطمئن شوید آخرین تغییرات React را بیلد کرده‌اید:
-cd ui_react
-npm run build
-cd ..
+برای اینکه بتوانید برنامه را به صورت یک فایل Setup استاندارد به دیگران بدهید تا مثل برنامه‌های عادی روی سیستم خود نصب کنند، از فایل اسکریپت `build_installer_windows.bat` استفاده کنید.
 
-مرحله ۲: با استفاده از PyInstaller فایل نهایی را بسازید:
-pyinstaller --noconfirm --onefile --windowed --name "HSE_Mine_Manager_V2" --icon "assets\app_icon.ico" --add-data "ui_react\dist;ui_react\dist" --add-data "assets;assets" main.py
+**پیش‌نیاز فایل نصبی:**
+برنامه Inno Setup Compiler را از سایت [jrsoftware.org/isdl.php](https://jrsoftware.org/isdl.php) دانلود و نصب کنید.
 
-فایل EXE نهایی در پوشه `dist` قرار می‌گیرد. با اولین اجرای آن روی هر سیستمی، دیتابیس لوکال ساخته می‌شود و نرم‌افزار به صورت آفلاین کار می‌کند.
+**ساخت فایل نصب:**
+روی `build_installer_windows.bat` کلیک کنید. این اسکریپت خودش تمامی مراحل زیر را انجام می‌دهد:
+۱. فرانت‌اند React را نصب و Build می‌کند.
+۲. با PyInstaller یک فایل اجرایی می‌سازد.
+۳. با استفاده از Inno Setup یک فایل نصبی (Setup.exe) می‌سازد.
+
+پس از پایان، فایل نصبی به نام `HSE_Mine_Manager_Setup.exe` درون پوشه `dist` قرار می‌گیرد.
+دیتابیس برنامه نیز حالا در پوشه امن مربوط به هر کاربر (`~/.hse_manager/`) ساخته می‌شود تا مشکل عدم دسترسی در پوشه Program Files پیش نیاید.
