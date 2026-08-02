@@ -32,8 +32,9 @@ for _d in (DATA_DIR, BACKUP_DIR, EXPORT_DIR, ASSETS_DIR):
 APP_NAME = "سامانه یکپارچه مدیریت HSE معدن"
 APP_VERSION = "1.0.0"
 
-# ---------------- پالت رنگی صنعتی (Dark Mode) ----------------
-COLORS = {
+
+# ---------------- پالت رنگی ----------------
+DARK_COLORS = {
     "bg_main": "#12161C",
     "bg_panel": "#1B2129",
     "bg_card": "#212833",
@@ -42,7 +43,7 @@ COLORS = {
     "sidebar": "#0E1116",
     "text_primary": "#E8ECF1",
     "text_secondary": "#8B96A5",
-    "accent": "#F5A623",     # نارنجی ایمنی - رنگ اصلی برند
+    "accent": "#F5A623",
     "accent_hover": "#FFB94D",
     "safety_green": "#2ECC71",
     "safety_yellow": "#F1C40F",
@@ -50,6 +51,34 @@ COLORS = {
     "safety_red": "#E74C3C",
     "safety_blue": "#3498DB",
 }
+
+LIGHT_COLORS = {
+    "bg_main": "#F5F7FA",
+    "bg_panel": "#E4E7EB",
+    "bg_card": "#FFFFFF",
+    "bg_input": "#FFFFFF",
+    "border": "#D1D5DB",
+    "sidebar": "#1B2129", # Keep sidebar dark for industrial look
+    "text_primary": "#1F2937",
+    "text_secondary": "#6B7280",
+    "accent": "#F5A623",
+    "accent_hover": "#E09612",
+    "safety_green": "#27AE60",
+    "safety_yellow": "#F39C12",
+    "safety_orange": "#D35400",
+    "safety_red": "#C0392B",
+    "safety_blue": "#2980B9",
+}
+
+COLORS = DARK_COLORS.copy()
+
+def set_theme(theme_name: str):
+    global COLORS
+    if theme_name == "light":
+        COLORS.update(LIGHT_COLORS)
+    else:
+        COLORS.update(DARK_COLORS)
+
 
 FONT_FAMILY = "Vazirmatn"  # فونت فارسی پیشنهادی؛ در صورت نبود، به فونت سیستم بازمی‌گردد
 FONT_SIZE_BASE = 11

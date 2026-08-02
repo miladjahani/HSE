@@ -1,12 +1,18 @@
 
+
 import os
 import csv
+from datetime import datetime
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget,
     QListWidgetItem, QMessageBox, QFileDialog, QFormLayout, QComboBox, QCheckBox, QFrame
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QMarginsF
+from PySide6.QtGui import QTextDocument, QPdfWriter, QPageSize, QPageLayout, QFont
+
+from core.config import COLORS, EXPORT_DIR, FONT_FAMILY
+
 
 from core.config import COLORS, EXPORT_DIR
 from core.database import db
@@ -126,10 +132,13 @@ class ReportsPage(QWidget):
             self.list_widget.addItem(item)
         root.addWidget(self.list_widget, 1)
 
+
         btn_row = QHBoxLayout()
         excel_btn = QPushButton("خروجی Excel (.xlsx)")
         csv_btn = QPushButton("خروجی CSV")
-        for b, color in [(excel_btn, COLORS["accent"]), (csv_btn, COLORS["safety_blue"])]:
+        pdf_btn = QPushButton("خروجی PDF")
+
+        for b, color in [(excel_btn, COLORS["accent"]), (csv_btn, COLORS["safety_blue"]), (pdf_btn, COLORS["safety_red"])]:
             b.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {color};
@@ -142,9 +151,13 @@ class ReportsPage(QWidget):
             """)
         excel_btn.clicked.connect(self._export_excel)
         csv_btn.clicked.connect(self._export_csv)
+        pdf_btn.clicked.connect(self._export_pdf)
+
         btn_row.addWidget(excel_btn)
         btn_row.addWidget(csv_btn)
+        btn_row.addWidget(pdf_btn)
         root.addLayout(btn_row)
+
 
     def _toggle_filters(self, state):
         self.from_date.setEnabled(state)
@@ -256,3 +269,92 @@ class ReportsPage(QWidget):
                 ws.append(["(بدون داده)"])
         wb.save(path)
         QMessageBox.information(self, "موفق", f"فایل اکسل ذخیره شد:\n{path}")
+
+    def _export_pdf(self):
+        tables = self._selected_tables()
+        if not tables:
+            QMessageBox.warning(self, "خطا", "حداقل یک جدول را انتخاب کنید.")
+            return
+
+        folder = QFileDialog.getExistingDirectory(self, "انتخاب پوشه ذخیره‌سازی", EXPORT_DIR)
+        if not folder:
+            return
+
+        for t in tables:
+            query, params = self._build_query(t)
+            rows = db.fetch_all(query, params)
+            table_name_fa = TABLES.get(t, t)
+
+            path = os.path.join(folder, f"{t}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
+
+            html = f"""
+            <html dir="rtl">
+            <head>
+                <style>
+                    body {{
+                        font-family: "{FONT_FAMILY}", Tahoma, sans-serif;
+                        font-size: 10pt;
+                    }}
+                    h1 {{
+                        text-align: center;
+                        color: #333;
+                    }}
+                    table {{
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                    }}
+                    th, td {{
+                        border: 1px solid #777;
+                        padding: 6px;
+                        text-align: right;
+                    }}
+                    th {{
+                        background-color: #f2f2f2;
+                        font-weight: bold;
+                    }}
+                </style>
+            </head>
+            <body>
+                <h1>گزارش {table_name_fa}</h1>
+            """
+
+            if not rows:
+                html += "<p>داده‌ای یافت نشد.</p>"
+            else:
+                html += "<table><thead><tr>"
+                headers = list(rows[0].keys())
+                for h in headers:
+                    html += f"<th>{h}</th>"
+                html += "</tr></thead><tbody>"
+
+                for r in rows:
+                    html += "<tr>"
+                    for h in headers:
+                        html += f"<td>{r[h]}</td>"
+                    html += "</tr>"
+
+                html += "</tbody></table>"
+
+            html += "</body></html>"
+
+            # Setup PDF Writer
+            doc = QTextDocument()
+            doc.setHtml(html)
+
+            # Use appropriate font config
+            font = QFont(FONT_FAMILY, 10)
+            doc.setDefaultFont(font)
+
+            pdf_writer = QPdfWriter(path)
+
+            # Setup page layout (A4 Landscape)
+            layout = QPageLayout()
+            layout.setPageSize(QPageSize(QPageSize.A4))
+            layout.setOrientation(QPageLayout.Landscape)
+            layout.setMargins(QMarginsF(10, 10, 10, 10))
+            pdf_writer.setPageLayout(layout)
+
+            doc.print_(pdf_writer)
+
+        QMessageBox.information(self, "موفق", f"فایل‌های PDF در مسیر زیر ذخیره شدند:\n{folder}")
